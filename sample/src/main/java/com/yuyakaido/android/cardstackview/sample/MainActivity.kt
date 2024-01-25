@@ -1,6 +1,7 @@
 package com.yuyakaido.android.cardstackview.sample
 
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.view.animation.AccelerateInterpolator
@@ -15,8 +16,15 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DiffUtil
 import com.google.android.material.navigation.NavigationView
-import com.yuyakaido.android.cardstackview.*
-import java.util.*
+import com.yuyakaido.android.cardstackview.CardStackLayoutManager
+import com.yuyakaido.android.cardstackview.CardStackListener
+import com.yuyakaido.android.cardstackview.CardStackView
+import com.yuyakaido.android.cardstackview.Direction
+import com.yuyakaido.android.cardstackview.Duration
+import com.yuyakaido.android.cardstackview.RewindAnimationSetting
+import com.yuyakaido.android.cardstackview.StackFrom
+import com.yuyakaido.android.cardstackview.SwipeAnimationSetting
+import com.yuyakaido.android.cardstackview.SwipeableMethod
 
 class MainActivity : AppCompatActivity(), CardStackListener {
 
@@ -24,6 +32,8 @@ class MainActivity : AppCompatActivity(), CardStackListener {
     private val cardStackView by lazy { findViewById<CardStackView>(R.id.card_stack_view) }
     private val manager by lazy { CardStackLayoutManager(this, this) }
     private val adapter by lazy { CardStackAdapter(createSpots()) }
+    val handler = Handler()
+    var runnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +41,29 @@ class MainActivity : AppCompatActivity(), CardStackListener {
         setupNavigation()
         setupCardStackView()
         setupButton()
+    }
+
+    override fun onResume() {
+        super.onResume()
+         runnable = object : Runnable {
+            override fun run() {
+                // Your code to run every 5 seconds
+                // For example, you can perform some background task or update the UI
+                cardStackView.swipe()
+
+                // Schedule the task to run again after 5 seconds
+                handler.postDelayed(this, 2000)
+            }
+        }
+
+        // Start the initial task
+        handler.postDelayed(runnable as Runnable, 2000)
+
+    }
+
+    override fun onPause() {
+        super.onPause()
+       runnable?.let { handler.removeCallbacks(it) }
     }
 
     override fun onBackPressed() {
@@ -47,6 +80,10 @@ class MainActivity : AppCompatActivity(), CardStackListener {
 
     override fun onCardSwiped(direction: Direction) {
         Log.d("CardStackView", "onCardSwiped: p = ${manager.topPosition}, d = $direction")
+       /** if (direction == Direction.Left) {
+            cardStackView.rewind()
+            cardStackView.rewind()
+        } **/
         if (manager.topPosition == adapter.itemCount - 5) {
             paginate()
         }
@@ -62,12 +99,12 @@ class MainActivity : AppCompatActivity(), CardStackListener {
 
     override fun onCardAppeared(view: View, position: Int) {
         val textView = view.findViewById<TextView>(R.id.item_name)
-        Log.d("CardStackView", "onCardAppeared: ($position) ${textView.text}")
+        //adapter.notifyItemChanged(position)
     }
 
     override fun onCardDisappeared(view: View, position: Int) {
-        val textView = view.findViewById<TextView>(R.id.item_name)
-        Log.d("CardStackView", "onCardDisappeared: ($position) ${textView.text}")
+       // val textView = view.findViewById<TextView>(R.id.item_name)
+       // Log.d("CardStackView", "onCardDisappeared: ($position) ${textView.text}")
     }
 
     private fun setupNavigation() {
@@ -99,6 +136,7 @@ class MainActivity : AppCompatActivity(), CardStackListener {
 
     private fun setupCardStackView() {
         initialize()
+            // Code to run on the UI thread    } });
     }
 
     private fun setupButton() {
@@ -137,18 +175,19 @@ class MainActivity : AppCompatActivity(), CardStackListener {
     }
 
     private fun initialize() {
-        manager.setStackFrom(StackFrom.None)
-        manager.setVisibleCount(3)
-        manager.setTranslationInterval(8.0f)
-        manager.setScaleInterval(0.95f)
+        manager.setStackFrom(StackFrom.Left)
+        manager.setVisibleCount(4)
+        manager.setTranslationInterval(15.0f)
+        manager.setScaleInterval(0.8f)
         manager.setSwipeThreshold(0.3f)
-        manager.setMaxDegree(20.0f)
+        manager.setMaxDegree(0.0f)
         manager.setDirections(Direction.HORIZONTAL)
         manager.setCanScrollHorizontal(true)
-        manager.setCanScrollVertical(true)
+        manager.setCanScrollVertical(false)
         manager.setSwipeableMethod(SwipeableMethod.AutomaticAndManual)
         manager.setOverlayInterpolator(LinearInterpolator())
         cardStackView.layoutManager = manager
+        adapter.cardStackLayoutManager = manager
         cardStackView.adapter = adapter
         cardStackView.itemAnimator.apply {
             if (this is DefaultItemAnimator) {
