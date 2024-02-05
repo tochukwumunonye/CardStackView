@@ -2,9 +2,13 @@ package com.yuyakaido.android.cardstackview;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.GestureDetectorCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.yuyakaido.android.cardstackview.internal.CardStackDataObserver;
@@ -12,19 +16,58 @@ import com.yuyakaido.android.cardstackview.internal.CardStackSnapHelper;
 
 public class CardStackView extends RecyclerView {
 
+    private GestureDetectorCompat gestureDetector;
+    private GestureDetector.SimpleOnGestureListener gestureListener = new GestureDetector.SimpleOnGestureListener() {
+        @Override
+        public boolean onFling(@NonNull MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
+            Log.d("gesture", "..");
+            if (e2.getX() < e1.getX()) {
+                Log.d("gesturerewind", "..");
+                rewind();
+            } else {
+                Log.d("gestureswipe", "..");
+                swipe();
+            }
+            return false; //super.onFling(e1, e2, velocityX, velocityY);
+        }
+
+        @Override
+        public boolean onDown(@NonNull MotionEvent e) {
+            if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                CardStackLayoutManager manager = (CardStackLayoutManager) getLayoutManager();
+
+                if (manager != null) {
+                    manager.updateProportion(e.getX(), e.getY());
+                }
+            }
+            Log.d("gestureonDown", "..");
+            return  false; //super.onDown(e);
+
+        }
+
+        @Override
+        public boolean onSingleTapUp(@NonNull MotionEvent e) {
+            Log.d("gestureonTap", "..");
+            return  false; //super.onSingleTapUp(e);
+        }
+    };
+
     private final CardStackDataObserver observer = new CardStackDataObserver(this);
 
     public CardStackView(Context context) {
+
         this(context, null);
     }
 
     public CardStackView(Context context, @Nullable AttributeSet attrs) {
+
         this(context, attrs, 0);
     }
 
     public CardStackView(Context context, @Nullable AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         initialize();
+        gestureDetector = new GestureDetectorCompat(context, gestureListener);
     }
 
     @Override
@@ -53,14 +96,15 @@ public class CardStackView extends RecyclerView {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        gestureDetector.onTouchEvent(event);
+       /* if (event.getAction() == MotionEvent.ACTION_DOWN) {
             CardStackLayoutManager manager = (CardStackLayoutManager) getLayoutManager();
 
             if (manager != null) {
                 manager.updateProportion(event.getX(), event.getY());
             }
-        }
-        return super.onInterceptTouchEvent(event);
+        } */
+        return false; //super.onInterceptTouchEvent(event);
     }
 
     public void swipe() {

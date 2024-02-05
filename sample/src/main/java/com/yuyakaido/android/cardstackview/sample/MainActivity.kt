@@ -3,6 +3,8 @@ package com.yuyakaido.android.cardstackview.sample
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
@@ -11,6 +13,7 @@ import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -26,7 +29,7 @@ import com.yuyakaido.android.cardstackview.StackFrom
 import com.yuyakaido.android.cardstackview.SwipeAnimationSetting
 import com.yuyakaido.android.cardstackview.SwipeableMethod
 
-class MainActivity : AppCompatActivity(), CardStackListener {
+class MainActivity : AppCompatActivity(), CardStackListener{
 
     private val drawerLayout by lazy { findViewById<DrawerLayout>(R.id.drawer_layout) }
     private val cardStackView by lazy { findViewById<CardStackView>(R.id.card_stack_view) }
@@ -80,10 +83,7 @@ class MainActivity : AppCompatActivity(), CardStackListener {
 
     override fun onCardSwiped(direction: Direction) {
         Log.d("CardStackView", "onCardSwiped: p = ${manager.topPosition}, d = $direction")
-       /** if (direction == Direction.Left) {
-            cardStackView.rewind()
-            cardStackView.rewind()
-        } **/
+
         if (manager.topPosition == adapter.itemCount - 5) {
             paginate()
         }
@@ -91,6 +91,7 @@ class MainActivity : AppCompatActivity(), CardStackListener {
 
     override fun onCardRewound() {
         Log.d("CardStackView", "onCardRewound: ${manager.topPosition}")
+
     }
 
     override fun onCardCanceled() {
@@ -99,12 +100,20 @@ class MainActivity : AppCompatActivity(), CardStackListener {
 
     override fun onCardAppeared(view: View, position: Int) {
         val textView = view.findViewById<TextView>(R.id.item_name)
-        //adapter.notifyItemChanged(position)
+        Log.d("CardStackView", "onCardAppeared: ($position) ${textView.text}")
+        Log.d("CardStackView", "appearPosition ${manager.topPosition}")
+        cardStackView.post {
+            adapter.notifyItemChanged(position, true)
+        }
     }
 
     override fun onCardDisappeared(view: View, position: Int) {
-       // val textView = view.findViewById<TextView>(R.id.item_name)
-       // Log.d("CardStackView", "onCardDisappeared: ($position) ${textView.text}")
+        val textView = view.findViewById<TextView>(R.id.item_name)
+
+        cardStackView.post {
+            adapter.notifyItemChanged(position)
+        }
+
     }
 
     private fun setupNavigation() {
@@ -175,6 +184,17 @@ class MainActivity : AppCompatActivity(), CardStackListener {
     }
 
     private fun initialize() {
+
+        val detector = object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        }
         manager.setStackFrom(StackFrom.Left)
         manager.setVisibleCount(4)
         manager.setTranslationInterval(15.0f)
@@ -184,7 +204,7 @@ class MainActivity : AppCompatActivity(), CardStackListener {
         manager.setDirections(Direction.HORIZONTAL)
         manager.setCanScrollHorizontal(true)
         manager.setCanScrollVertical(false)
-        manager.setSwipeableMethod(SwipeableMethod.AutomaticAndManual)
+        manager.setSwipeableMethod(SwipeableMethod.Automatic)
         manager.setOverlayInterpolator(LinearInterpolator())
         cardStackView.layoutManager = manager
         adapter.cardStackLayoutManager = manager
@@ -324,5 +344,6 @@ class MainActivity : AppCompatActivity(), CardStackListener {
         spots.add(Spot(name = "Great Wall of China", city = "China", url = "https://source.unsplash.com/AWh9C-QjhE4/600x800"))
         return spots
     }
+
 
 }

@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.yuyakaido.android.cardstackview.CardStackLayoutManager
 
-class CardStackAdapter(
+open class CardStackAdapter(
         private var spots: List<Spot> = emptyList()
 ) : RecyclerView.Adapter<CardStackAdapter.ViewHolder>() {
 
@@ -20,14 +20,16 @@ class CardStackAdapter(
         return ViewHolder(inflater.inflate(R.layout.item_spot, parent, false))
     }
 
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-
-        if(position == holder.layoutPosition) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isNotEmpty() && payloads[0] == true) {
             holder.itemView.alpha = 1f
         } else {
-            holder.itemView.alpha = 0.5f
+            super.onBindViewHolder(holder, position, payloads)
         }
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.itemView.alpha = 0.5f
         val spot = spots[position]
         holder.name.text = "${spot.id}. ${spot.name}"
         holder.city.text = spot.city
